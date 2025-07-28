@@ -1,103 +1,134 @@
-import Image from "next/image";
+'use client'
+import React, { useState } from 'react'
+import { Header } from '@/components/layout/Header'
+import { SwapInterface } from '@/components/trading/SwapInterface'
+import { PriceChart } from '@/components/charts/PriceChart'
+import { PortfolioOverview } from '@/components/portfolio/PortfolioOverview'
+import { Button } from '@/components/ui/Button'
+import { ArrowLeftRight, Wallet, BarChart3 } from 'lucide-react'
 
-export default function Home() {
+export default function HomePage() {
+  const [activeTab, setActiveTab] = useState('swap')
+  const [walletConnected, setWalletConnected] = useState(false)
+
+  const tabs = [
+    { id: 'swap', name: 'Swap', icon: ArrowLeftRight },
+    { id: 'portfolio', name: 'Portfolio', icon: Wallet },
+    { id: 'analytics', name: 'Analytics', icon: BarChart3 },
+  ]
+
+  const handleConnectWallet = () => {
+    // Simulate wallet connection
+    setTimeout(() => {
+      setWalletConnected(true)
+    }, 1000)
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-space-black">
+      {/* Header */}
+      <Header 
+        onConnectWallet={handleConnectWallet}
+        walletConnected={walletConnected}
+        walletAddress={walletConnected ? '0x1234...abcd' : undefined}
+      />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Tab Navigation */}
+        <div className="flex justify-center mb-8">
+          <div className="flex bg-asteroid-gray rounded-lg p-1">
+            {tabs.map((tab) => (
+              <Button
+                key={tab.id}
+                variant={activeTab === tab.id ? 'primary' : 'ghost'}
+                onClick={() => setActiveTab(tab.id)}
+                className="flex items-center space-x-2 px-6 py-2"
+              >
+                <tab.icon className="w-4 h-4" />
+                <span>{tab.name}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Content Area */}
+          <div className="lg:col-span-2">
+            {activeTab === 'swap' && (
+              <div>
+                <SwapInterface />
+              </div>
+            )}
+            
+            {activeTab === 'portfolio' && (
+              <div>
+                {walletConnected ? (
+                  <PortfolioOverview />
+                ) : (
+                  <div className="text-center py-12">
+                    <Wallet className="w-16 h-16 text-stardust-gray mx-auto mb-4" />
+                    <h3 className="text-xl text-cosmic-white mb-2">
+                      Connect Your Wallet
+                    </h3>
+                    <p className="text-stardust-gray mb-6">
+                      Connect your wallet to view your portfolio
+                    </p>
+                    <Button onClick={handleConnectWallet} variant="primary">
+                      Connect Wallet
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {activeTab === 'analytics' && (
+              <div className="space-y-6">
+                <PriceChart tokenSymbol="ETH" />
+                <PriceChart tokenSymbol="BTC" />
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Always show price chart in sidebar for swap tab */}
+            {activeTab === 'swap' && (
+              <PriceChart tokenSymbol="ETH" className="h-80" />
+            )}
+            
+            {/* Market Stats Card */}
+            <div className="bg-gradient-to-br from-asteroid-gray to-asteroid-gray/80 rounded-xl p-6 border border-meteor-gray/50">
+              <h3 className="text-lg font-semibold text-cosmic-white mb-4">
+                Market Stats
+              </h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-stardust-gray">Total Volume 24h</span>
+                  <span className="text-cosmic-white">$1.2B</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stardust-gray">Active Users</span>
+                  <span className="text-cosmic-white">45,231</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stardust-gray">Supported Chains</span>
+                  <span className="text-cosmic-white">12</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-stardust-gray">Available Tokens</span>
+                  <span className="text-cosmic-white">2,847</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
-  );
+  )
 }
+

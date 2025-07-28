@@ -14,7 +14,7 @@ interface TokenInputProps {
   label?: string
   value?: string
   onChange?: (value: string) => void
-  token?: Token                    // Selected token
+  token?: Token | null                  // Selected token
   onTokenSelect?: () => void       // Function to open token selector
   showBalance?: boolean            // Should we show balance?
   className?: string

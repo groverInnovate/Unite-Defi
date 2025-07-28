@@ -17,9 +17,10 @@ export interface Token {
 
 interface TokenSelectorProps {
   isOpen: boolean                           // Is modal open?
-  onClose: () => void                      // Function to close modal
-  onSelectToken: (token: Token) => void    // Function when token is selected
-  selectedToken?: Token                     // Currently selected token
+  onClose: () => void    
+  selectedToken?: Token | null                      // Function to close modal
+  onSelectToken: (token: Token | null) => void    // Function when token is selected
+                  // Currently selected token
 }
 
 export const TokenSelector: React.FC<TokenSelectorProps> = ({
