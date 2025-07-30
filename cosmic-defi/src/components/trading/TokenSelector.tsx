@@ -1,26 +1,27 @@
+'use client'
 import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Star } from 'lucide-react'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 
-// Define what a token looks like
-export interface Token {
+// ✅ FIXED: Token interface MUST match SwapInterface.tsx exactly
+interface Token {
   address: string
   symbol: string
   name: string
   icon: string
   balance?: string
   price?: number
-  popular?: boolean     // Is this a popular token?
+  decimals: number 
+  popular: boolean // ✅ ADDED: This was missing!
 }
 
 interface TokenSelectorProps {
-  isOpen: boolean                           // Is modal open?
-  onClose: () => void    
-  selectedToken?: Token | null                      // Function to close modal
-  onSelectToken: (token: Token | null) => void    // Function when token is selected
-                  // Currently selected token
+  isOpen: boolean
+  onClose: () => void
+  onSelectToken: (token: Token) => void
+  selectedToken?: Token  // ✅ FIXED: Token | undefined
 }
 
 export const TokenSelector: React.FC<TokenSelectorProps> = ({
@@ -31,36 +32,58 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Sample token list (in real app, this would come from an API)
+  // ✅ FIXED: Updated token list with decimals property
   const allTokens: Token[] = [
     {
-      address: '0x...',
+      address: '0x0000000000000000000000000000000000000000',
       symbol: 'ETH',
       name: 'Ethereum',
       icon: '/tokens/eth.png',
       balance: '1.234',
       price: 2000,
+      decimals: 18,  // ✅ ADDED
       popular: true
     },
     {
-      address: '0x...',
+      address: '0xA0b86a33E6441e3A99EA75C4AAeE54F1B2B1c8e5',
       symbol: 'USDC',
       name: 'USD Coin',
       icon: '/tokens/usdc.png',
       balance: '500.00',
       price: 1,
+      decimals: 6,   // ✅ ADDED
       popular: true
     },
     {
-      address: '0x...',
+      address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
       symbol: 'WBTC',
       name: 'Wrapped Bitcoin',
       icon: '/tokens/wbtc.png',
       balance: '0.05',
       price: 45000,
+      decimals: 8,   // ✅ ADDED
       popular: true
     },
-    // Add more tokens here...
+    {
+      address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
+      symbol: 'LINK',
+      name: 'Chainlink',
+      icon: '/tokens/link.png',
+      balance: '100.0',
+      price: 15,
+      decimals: 18,  // ✅ ADDED
+      popular: true
+    },
+    {
+      address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+      symbol: 'UNI',
+      name: 'Uniswap',
+      icon: '/tokens/uni.png',
+      balance: '50.0',
+      price: 8,
+      decimals: 18,  // ✅ ADDED
+      popular: false
+    }
   ]
 
   // Filter tokens based on search
@@ -79,7 +102,7 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
   const handleTokenSelect = (token: Token) => {
     onSelectToken(token)
     onClose()
-    setSearchTerm('') // Clear search when closing
+    setSearchTerm('')
   }
 
   return (
@@ -139,7 +162,7 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
                   <div className="flex flex-wrap gap-2">
                     {popularTokens.map((token) => (
                       <Button
-                        key={token.symbol}
+                        key={`popular-${token.address}`}
                         variant="ghost"
                         size="sm"
                         onClick={() => handleTokenSelect(token)}
@@ -159,9 +182,9 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
 
               {/* Token list */}
               <div className="max-h-80 overflow-y-auto">
-                {filteredTokens.map((token) => (
+                {filteredTokens.map((token, index) => (
                   <motion.button
-                    key={token.address}
+                    key={`token-${token.address}-${index}`}
                     className="w-full flex items-center space-x-3 p-4 hover:bg-meteor-gray/30 transition-colors"
                     onClick={() => handleTokenSelect(token)}
                     whileHover={{ backgroundColor: 'rgba(55, 65, 81, 0.3)' }}
@@ -215,3 +238,5 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
     </AnimatePresence>
   )
 }
+
+

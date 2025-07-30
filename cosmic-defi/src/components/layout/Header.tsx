@@ -1,31 +1,14 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Button } from '../ui/Button'
-import { Wallet, Settings, BarChart3, ArrowLeftRight } from 'lucide-react'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { BarChart3, ArrowLeftRight, Settings } from 'lucide-react'
 
-interface HeaderProps {
-  onConnectWallet?: () => void
-  walletConnected?: boolean
-  walletAddress?: string
-}
-
-export const Header: React.FC<HeaderProps> = ({
-  onConnectWallet,
-  walletConnected = false,
-  walletAddress
-}) => {
-  // Navigation items
+export const Header: React.FC = () => {
   const navItems = [
     { name: 'Swap', icon: ArrowLeftRight, href: '/' },
-    { name: 'Portfolio', icon: Wallet, href: '/portfolio' },
     { name: 'Analytics', icon: BarChart3, href: '/analytics' },
     { name: 'Settings', icon: Settings, href: '/settings' },
   ]
-
-  // Shorten wallet address for display
-  const shortAddress = walletAddress 
-    ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-    : ''
 
   return (
     <motion.header
@@ -65,33 +48,15 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Wallet Connection */}
           <div className="flex items-center space-x-4">
-            {/* Network Indicator */}
-            <div className="hidden sm:flex items-center space-x-2 px-3 py-1 bg-asteroid-gray rounded-lg">
-              <div className="w-2 h-2 bg-aurora-green rounded-full animate-pulse" />
-              <span className="text-sm text-cosmic-white">Ethereum</span>
-            </div>
-
-            {/* Wallet Button */}
-            {walletConnected ? (
-              <motion.div
-                className="flex items-center space-x-2 px-4 py-2 bg-asteroid-gray rounded-lg border border-meteor-gray"
-                whileHover={{ boxShadow: '0 0 20px rgba(99, 102, 241, 0.3)' }}
-              >
-                <div className="w-2 h-2 bg-aurora-green rounded-full" />
-                <span className="text-cosmic-white font-mono text-sm">
-                  {shortAddress}
-                </span>
-              </motion.div>
-            ) : (
-              <Button
-                onClick={onConnectWallet}
-                variant="primary"
-                className="flex items-center space-x-2"
-              >
-                <Wallet className="w-4 h-4" />
-                <span>Connect Wallet</span>
-              </Button>
-            )}
+            {/* ✅ RainbowKit handles all wallet logic */}
+            <ConnectButton 
+              showBalance={false}
+              chainStatus="icon"
+              accountStatus={{ 
+                smallScreen: 'avatar', 
+                largeScreen: 'full' 
+              }}
+            />
           </div>
         </div>
       </div>

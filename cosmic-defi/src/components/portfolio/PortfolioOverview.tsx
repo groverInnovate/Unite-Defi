@@ -1,46 +1,75 @@
-import React from 'react'
+'use client'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Wallet, TrendingUp, Activity, DollarSign } from 'lucide-react'
+import { Wallet, TrendingUp, Activity, DollarSign, RefreshCw } from 'lucide-react'
 import { Card } from '../ui/Card'
-
-// Sample portfolio data
-const portfolioData = {
-  totalValue: 12847.52,
-  dailyChange: 284.32,
-  dailyChangePercent: 2.27,
-  tokens: [
-    {
-      symbol: 'ETH',
-      name: 'Ethereum',
-      icon: '/tokens/eth.png',
-      balance: '1.234',
-      value: 2468.00,
-      change: 123.45,
-      changePercent: 5.26
-    },
-    {
-      symbol: 'USDC',
-      name: 'USD Coin',
-      icon: '/tokens/usdc.png',
-      balance: '5000.00',
-      value: 5000.00,
-      change: 0,
-      changePercent: 0
-    },
-    {
-      symbol: 'WBTC',
-      name: 'Wrapped Bitcoin',
-      icon: '/tokens/wbtc.png',
-      balance: '0.123',
-      value: 5379.52,
-      change: 160.87,
-      changePercent: 3.08
-    }
-  ]
-}
+import { Button } from '../ui/Button'
+import { useAccount } from 'wagmi'
+import { apiService } from '@/services/apiService'
+import { PortfolioData } from '@/types/api'
 
 export const PortfolioOverview: React.FC = () => {
-  const isPositiveChange = portfolioData.dailyChange > 0
+  const { address } = useAccount()
+  const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (address) {
+      loadPortfolio()
+    }
+  }, [address])
+
+  const loadPortfolio = async () => {
+    if (!address) return
+    
+    try {
+      setIsLoading(true)
+      setError(null)
+      const data = await apiService.getPortfolio(address)
+      setPortfolioData(data)
+    } catch (err: any) {
+      setError(err.message || 'Failed to load portfolio')
+      console.error('Portfolio error:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Loading skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-meteor-gray rounded mb-2"></div>
+                <div className="h-8 bg-meteor-gray rounded mb-2"></div>
+                <div className="h-3 bg-meteor-gray rounded w-1/2"></div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6 text-center">
+        <div className="text-crimson-red mb-4">{error}</div>
+        <Button onClick={loadPortfolio} variant="secondary">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Try Again
+        </Button>
+      </Card>
+    )
+  }
+
+  if (!portfolioData) return null
+
+  const isPositiveChange = portfolioData.totalChange24h > 0
 
   return (
     <div className="space-y-6">
@@ -52,14 +81,14 @@ export const PortfolioOverview: React.FC = () => {
             <div>
               <p className="text-sm text-stardust-gray">Total Portfolio Value</p>
               <p className="text-2xl font-bold text-cosmic-white">
-                ${portfolioData.totalValue.toLocaleString()}
+                ${portfolioData.totalValueUSD.toLocaleString()}
               </p>
               <p className={`text-sm flex items-center mt-1 ${
                 isPositiveChange ? 'text-aurora-green' : 'text-crimson-red'
               }`}>
                 <TrendingUp className="w-3 h-3 mr-1" />
-                {isPositiveChange ? '+' : ''}${portfolioData.dailyChange.toFixed(2)} (
-                {portfolioData.dailyChangePercent.toFixed(2)}%)
+                {isPositiveChange ? '+' : ''}${portfolioData.totalChange24h.toFixed(2)} (
+                {portfolioData.totalChangePercent24h.toFixed(2)}%)
               </p>
             </div>
             <div className="p-3 bg-cosmic-purple/20 rounded-full">
@@ -76,10 +105,10 @@ export const PortfolioOverview: React.FC = () => {
               <p className={`text-2xl font-bold ${
                 isPositiveChange ? 'text-aurora-green' : 'text-crimson-red'
               }`}>
-                {isPositiveChange ? '+' : ''}${portfolioData.dailyChange.toFixed(2)}
+                {isPositiveChange ? '+' : ''}${portfolioData.totalChange24h.toFixed(2)}
               </p>
               <p className="text-sm text-stardust-gray mt-1">
-                {portfolioData.dailyChangePercent.toFixed(2)}% change
+                {portfolioData.totalChangePercent24h.toFixed(2)}% change
               </p>
             </div>
             <div className={`p-3 rounded-full ${
@@ -113,14 +142,19 @@ export const PortfolioOverview: React.FC = () => {
 
       {/* Token Holdings */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-cosmic-white mb-4">
-          Your Holdings
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-cosmic-white">
+            Your Holdings
+          </h3>
+          <Button onClick={loadPortfolio} variant="ghost" size="sm">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
         
         <div className="space-y-4">
-          {portfolioData.tokens.map((token, index) => (
+          {portfolioData.tokens.map((tokenBalance, index) => (
             <motion.div
-              key={token.symbol}
+              key={`${tokenBalance.token.address}-${index}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -129,16 +163,19 @@ export const PortfolioOverview: React.FC = () => {
               {/* Token Info */}
               <div className="flex items-center space-x-4">
                 <img 
-                  src={token.icon} 
-                  alt={token.symbol}
+                  src={tokenBalance.token.icon} 
+                  alt={tokenBalance.token.symbol}
                   className="w-10 h-10 rounded-full"
                 />
                 <div>
-                  <div className="font-medium text-cosmic-white">
-                    {token.symbol}
+                  <div className="font-medium text-cosmic-white flex items-center">
+                    {tokenBalance.token.symbol}
+                    {tokenBalance.token.verified && (
+                      <div className="w-2 h-2 bg-aurora-green rounded-full ml-2" />
+                    )}
                   </div>
                   <div className="text-sm text-stardust-gray">
-                    {token.name}
+                    {tokenBalance.token.name}
                   </div>
                 </div>
               </div>
@@ -146,32 +183,24 @@ export const PortfolioOverview: React.FC = () => {
               {/* Balance */}
               <div className="text-right">
                 <div className="font-medium text-cosmic-white">
-                  {token.balance} {token.symbol}
+                  {tokenBalance.balance} {tokenBalance.token.symbol}
                 </div>
                 <div className="text-sm text-stardust-gray">
-                  ${token.value.toLocaleString()}
-                </div>
-              </div>
-
-              {/* Change */}
-              <div className="text-right">
-                <div className={`font-medium ${
-                  token.change > 0 ? 'text-aurora-green' : 
-                  token.change < 0 ? 'text-crimson-red' : 'text-stardust-gray'
-                }`}>
-                  {token.change > 0 ? '+' : ''}${token.change.toFixed(2)}
-                </div>
-                <div className={`text-sm ${
-                  token.changePercent > 0 ? 'text-aurora-green' : 
-                  token.changePercent < 0 ? 'text-crimson-red' : 'text-stardust-gray'
-                }`}>
-                  {token.changePercent > 0 ? '+' : ''}{token.changePercent.toFixed(2)}%
+                  ${tokenBalance.balanceUSD.toLocaleString()}
                 </div>
               </div>
             </motion.div>
           ))}
+          
+          {portfolioData.tokens.length === 0 && (
+            <div className="text-center py-8">
+              <Wallet className="w-12 h-12 text-stardust-gray mx-auto mb-4" />
+              <p className="text-stardust-gray">No tokens found</p>
+            </div>
+          )}
         </div>
       </Card>
     </div>
   )
 }
+

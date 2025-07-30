@@ -4,10 +4,12 @@ import { Button } from './Button'
 import { ChevronDown } from 'lucide-react'
 
 interface Token {
-  symbol: string      // Token symbol like "ETH"
-  name: string        // Full name like "Ethereum"
-  icon: string        // URL to token icon
-  balance?: string    // User's balance of this token
+  symbol: string
+  name: string
+  icon: string
+  address: string
+  balance?: string
+  decimals: number  // ✅ ADDED: Required decimals property
 }
 
 interface TokenInputProps {
