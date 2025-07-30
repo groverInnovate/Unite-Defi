@@ -14,7 +14,7 @@ interface Token {
   balance?: string
   price?: number
   decimals: number 
-  popular: boolean // ✅ ADDED: This was missing!
+  popular?: boolean // ✅ ADDED: This was missing!
 }
 
 interface TokenSelectorProps {
@@ -38,7 +38,7 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
       address: '0x0000000000000000000000000000000000000000',
       symbol: 'ETH',
       name: 'Ethereum',
-      icon: '/tokens/eth.png',
+      icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
       balance: '1.234',
       price: 2000,
       decimals: 18,  // ✅ ADDED
@@ -48,7 +48,7 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
       address: '0xA0b86a33E6441e3A99EA75C4AAeE54F1B2B1c8e5',
       symbol: 'USDC',
       name: 'USD Coin',
-      icon: '/tokens/usdc.png',
+      icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
       balance: '500.00',
       price: 1,
       decimals: 6,   // ✅ ADDED

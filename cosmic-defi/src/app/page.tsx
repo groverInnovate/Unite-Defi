@@ -216,7 +216,7 @@ export default function HomePage() {
                   </div>
                 }
               >
-                <PriceChart tokenSymbol="ETH" className="h-80" />
+                <PriceChart tokenSymbol="ETH" className="h-120" />
               </ErrorBoundary>
             )}
             
@@ -266,44 +266,6 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-
-            {/* Quick Actions Card */}
-            {isConnected && (
-              <div className="bg-gradient-to-br from-cosmic-purple/20 to-stellar-pink/20 rounded-xl p-6 border border-cosmic-purple/30">
-                <h3 className="text-lg font-semibold text-cosmic-white mb-4">
-                  Quick Actions
-                </h3>
-                
-                <div className="space-y-3">
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-left"
-                    onClick={() => setActiveTab('swap')}
-                  >
-                    <ArrowLeftRight className="w-4 h-4 mr-2" />
-                    Start New Swap
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-left"
-                    onClick={() => setActiveTab('portfolio')}
-                  >
-                    <Wallet className="w-4 h-4 mr-2" />
-                    View Portfolio
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-start text-left"
-                    onClick={() => setActiveTab('analytics')}
-                  >
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Market Analytics
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </main>

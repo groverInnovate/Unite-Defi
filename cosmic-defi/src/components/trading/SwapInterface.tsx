@@ -353,7 +353,7 @@ export const SwapInterface: React.FC = () => {
             : isLoading 
             ? 'Processing...' 
             : isCrossChain 
-            ? `Swap via Fusion+ Bridge` 
+            ? `Swap ` 
             : 'Swap Tokens'}
         </Button>
       </Card>
@@ -375,5 +375,7 @@ export const SwapInterface: React.FC = () => {
     </div>
   )
 }
+
+
 
 
