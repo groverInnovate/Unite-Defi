@@ -13,6 +13,7 @@ import { simpleSecretService, SimpleSwapSecret } from '@/services/secretService'
 import { useTokenBalances } from '@/hooks/useTokenBalances'
 import { SwapQuoteResponse } from '@/types/api'
 import { Token } from '@/types/token'
+import { OrderStatus } from '@/types/order'
 import toast from 'react-hot-toast'
 
 // Supported chains for cross-chain swaps
@@ -141,6 +142,36 @@ export const SwapInterface: React.FC = () => {
         setCurrentSecret(swapSecret)
         toast.success('🔐 Secret generated and hash stored!')
       }
+
+      const orderData = {
+      maker: address,
+      makerAsset: fromToken.address,
+      makingAmount: (parseFloat(fromAmount) * Math.pow(10, fromToken.decimals)).toString(),
+      takerAsset: toToken.address,
+      takingAmount: (parseFloat(toAmount) * Math.pow(10, toToken.decimals)).toString(),
+      receiver: address,
+      status: OrderStatus.PENDING,
+      hashLock: swapSecret?.secretHash || '',
+      sourceChainId: fromChain,
+      destinationChainId: toChain,
+      quoteId: quote.quoteId || '',
+      
+      // Additional fields for hackathon
+      secret: swapSecret?.secret || '',
+      userAddress: address.toLowerCase(),
+      fromTokenSymbol: fromToken.symbol,
+      toTokenSymbol: toToken.symbol
+    }
+    let orderResult: { success: boolean; orderId: string; orderHash: string } | null = null
+    
+    try {
+      const orderResult = await apiService.storeOrder(orderData)
+      toast.success(`📝 Order stored in database! ID: ${orderResult.orderId}`)
+      console.log('Order stored:', orderResult)
+    } catch (orderError) {
+      console.error('Failed to store order:', orderError)
+      toast.error('Failed to store order in database')
+    }
       
       if (chainId !== fromChain) {
         toast.loading(

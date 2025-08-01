@@ -8,6 +8,7 @@ import {
   TransactionHistory,
   ApiError 
 } from '@/types/api'
+import { Order, OrderStatus } from '@/types/order'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
@@ -198,7 +199,87 @@ class ApiService {
       hasMore: false,
     })
   }
+  async storeOrder(orderData: Partial<Order>): Promise<{ success: boolean; orderId: string }> {
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to store order: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      return result
+    } catch (error) {
+      console.error('Error storing order:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get order by hash
+   */
+  async getOrder(orderHash: string): Promise<Order | null> {
+    try {
+      const response = await fetch(`/api/orders/${orderHash}`)
+      
+      if (!response.ok) {
+        if (response.status === 404) return null
+        throw new Error(`Failed to get order: ${response.statusText}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error getting order:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Update order status
+   */
+  async updateOrderStatus(orderHash: string, status: OrderStatus): Promise<boolean> {
+    try {
+      const response = await fetch(`/api/orders/${orderHash}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      })
+
+      return response.ok
+    } catch (error) {
+      console.error('Error updating order status:', error)
+      return false
+    }
+  }
+
+  /**
+   * Get user's orders
+   */
+  async getUserOrders(userAddress: string): Promise<Order[]> {
+    try {
+      const response = await fetch(`/api/orders/user/${userAddress}`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to get user orders: ${response.statusText}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error getting user orders:', error)
+      return []
+    }
+  }
 }
+
+
 
 export const apiService = new ApiService()
 

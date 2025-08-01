@@ -19,6 +19,7 @@ export interface SwapQuoteResponse {
   route: string
   priceImpact?: string
   minimumReceived?: string
+  quoteId?: string 
 }
 
 export interface SwapExecuteRequest {
