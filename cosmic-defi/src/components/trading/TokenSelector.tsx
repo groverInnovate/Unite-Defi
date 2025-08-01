@@ -4,24 +4,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Star } from 'lucide-react'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
-
+import { Token } from '@/types/token'
 // ✅ FIXED: Token interface MUST match SwapInterface.tsx exactly
-interface Token {
-  address: string
-  symbol: string
-  name: string
-  icon: string
-  balance?: string
-  price?: number
-  decimals: number 
-  popular?: boolean // ✅ ADDED: This was missing!
-}
+
 
 interface TokenSelectorProps {
   isOpen: boolean
   onClose: () => void
   onSelectToken: (token: Token) => void
-  selectedToken?: Token  // ✅ FIXED: Token | undefined
+  selectedToken?: Token
+  tokens?: Token[]  // ✅ ADD THIS LINE - Add tokens prop
 }
 
 export const TokenSelector: React.FC<TokenSelectorProps> = ({
@@ -34,57 +26,68 @@ export const TokenSelector: React.FC<TokenSelectorProps> = ({
 
   // ✅ FIXED: Updated token list with decimals property
   const allTokens: Token[] = [
-    {
-      address: '0x0000000000000000000000000000000000000000',
-      symbol: 'ETH',
-      name: 'Ethereum',
-      icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
-      balance: '1.234',
-      price: 2000,
-      decimals: 18,  // ✅ ADDED
-      popular: true
-    },
-    {
-      address: '0xA0b86a33E6441e3A99EA75C4AAeE54F1B2B1c8e5',
-      symbol: 'USDC',
-      name: 'USD Coin',
-      icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
-      balance: '500.00',
-      price: 1,
-      decimals: 6,   // ✅ ADDED
-      popular: true
-    },
-    {
-      address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-      symbol: 'WBTC',
-      name: 'Wrapped Bitcoin',
-      icon: '/tokens/wbtc.png',
-      balance: '0.05',
-      price: 45000,
-      decimals: 8,   // ✅ ADDED
-      popular: true
-    },
-    {
-      address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
-      symbol: 'LINK',
-      name: 'Chainlink',
-      icon: '/tokens/link.png',
-      balance: '100.0',
-      price: 15,
-      decimals: 18,  // ✅ ADDED
-      popular: true
-    },
-    {
-      address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
-      symbol: 'UNI',
-      name: 'Uniswap',
-      icon: '/tokens/uni.png',
-      balance: '50.0',
-      price: 8,
-      decimals: 18,  // ✅ ADDED
-      popular: false
-    }
-  ]
+  {
+    address: '0x0000000000000000000000000000000000000000',
+    symbol: 'ETH',
+    name: 'Ethereum',
+    icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png',
+    balance: '1.234',
+    price: 2000,
+    decimals: 18,
+    chainId: 1, // ✅ ADDED - Ethereum mainnet
+    popular: true,
+    verified: true // ✅ ADDED - Optional but good practice
+  },
+  {
+    address: '0xA0b86a33E6441e3A99EA75C4AAeE54F1B2B1c8e5',
+    symbol: 'USDC',
+    name: 'USD Coin',
+    icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
+    balance: '500.00',
+    price: 1,
+    decimals: 6,
+    chainId: 1, // ✅ ADDED - Ethereum mainnet
+    popular: true,
+    verified: true
+  },
+  {
+    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+    symbol: 'WBTC',
+    name: 'Wrapped Bitcoin',
+    icon: '/tokens/wbtc.png',
+    balance: '0.05',
+    price: 45000,
+    decimals: 8,
+    chainId: 1, // ✅ ADDED - Ethereum mainnet
+    popular: true,
+    verified: true
+  },
+  {
+    address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
+    symbol: 'LINK',
+    name: 'Chainlink',
+    icon: '/tokens/link.png',
+    balance: '100.0',
+    price: 15,
+    decimals: 18,
+    chainId: 1, // ✅ ADDED - Ethereum mainnet
+    popular: true,
+    verified: true
+  },
+  {
+    address: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
+    symbol: 'UNI',
+    name: 'Uniswap',
+    icon: '/tokens/uni.png',
+    balance: '50.0',
+    price: 8,
+    decimals: 18,
+    chainId: 1, // ✅ ADDED - Ethereum mainnet
+    popular: false,
+    verified: true
+  }
+]
+
 
   // Filter tokens based on search
   const filteredTokens = useMemo(() => {
