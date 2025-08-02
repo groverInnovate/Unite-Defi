@@ -16,7 +16,7 @@ import { useSignTypedData } from 'wagmi';
 import { Token } from '@/types/token'
 import toast from 'react-hot-toast'
 import * as Sdk from '@1inch/cross-chain-sdk'
-import {ethers} from 'ethers'
+import {ethers, getAddress} from 'ethers'
 import {CHAIN_CONFIGS, getLatestBlockTimestamp} from './config'
 const {Address} = Sdk
 // Supported chains for cross-chain swaps
@@ -175,7 +175,9 @@ export const SwapInterface: React.FC = () => {
       const UINT_40_MAX = 2n ** 40n - 1n;
       const srcConfig = CHAIN_CONFIGS[fromChain];
       const dstConfig = CHAIN_CONFIGS[toChain];
-        
+      console.log('srcConfig:', srcConfig)
+      const USDC_Address = (srcConfig.tokens.USDC.address)
+      console.log(USDC_Address)
       const makingAmount = ethers.parseUnits(fromAmount, fromToken.decimals);
       const takingAmount = ethers.parseUnits(quote.dstAmount, toToken.decimals);
       const srcTimestamp = await getLatestBlockTimestamp(srcConfig.url);
@@ -187,14 +189,14 @@ export const SwapInterface: React.FC = () => {
                 maker: new Address(address),
                 makingAmount: makingAmount,
                 takingAmount: takingAmount,
-                makerAsset: new Address(fromToken.address),
-                takerAsset: new Address(toToken.address),
+                makerAsset: new Address(USDC_Address),
+                takerAsset: new Address("0x7D0cd861fAC3E694511946695c353534C7c3808B"),
             },
             {
                 hashLock: Sdk.HashLock.forSingleFill(swapSecret.secret),
                 timeLocks: Sdk.TimeLocks.new(TIMELOCKS),
                 srcChainId: srcConfig.chainId,
-                dstChainId: dstConfig.chainId,
+                dstChainId: Sdk.NetworkEnum.MONAD,
                 srcSafetyDeposit: SAFETY_DEPOSIT,
                 dstSafetyDeposit: SAFETY_DEPOSIT,
             },
@@ -227,28 +229,6 @@ export const SwapInterface: React.FC = () => {
           primaryType: typedData.primaryType, // Let wagmi know the main type, e.g., "Order"
           message: typedData.message, // The actual order data to be signed
         });
-
-      // Execute swap
-      const result = await apiService.executeSwap({
-        quote,
-        userAddress: address,
-        fromChain,
-        toChain,
-      })
-      
-      setTransactionHash(result.transactionHash || null)
-      
-      if (result.status === 'submitted' || result.status === 'pending') {
-        toast.success('✅ Swap submitted successfully!')
-        
-        if (!isCrossChain) {
-          setFromAmount('')
-          setToAmount('')
-          setQuote(null)
-          setCurrentSecret(null)
-          simpleSecretService.clearSecret()
-        }
-      }
       
     } catch (error: any) {
       console.error('Swap failed:', error)

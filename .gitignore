@@ -1,0 +1,4 @@
+.env
+/backend/node_modules
+/cosmic-defi/node_modules
+/monad-backend/node_modules
