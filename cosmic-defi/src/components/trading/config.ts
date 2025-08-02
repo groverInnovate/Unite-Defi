@@ -1,6 +1,6 @@
 // src/config.ts
 
-import Sdk  from '@1inch/cross-chain-sdk'; // Adjust the import path
+import * as Sdk  from '@1inch/cross-chain-sdk'; // Adjust the import path
 import { ethers } from 'ethers';
 
 // A helper type for chain configuration

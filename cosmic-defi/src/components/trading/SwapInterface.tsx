@@ -12,9 +12,10 @@ import { tokenService } from '@/services/TokenService'
 import { simpleSecretService, SimpleSwapSecret } from '@/services/secretService' // ✅ UPDATED IMPORT
 import { useTokenBalances } from '@/hooks/useTokenBalances'
 import { SwapQuoteResponse } from '@/types/api'
+import { useSignTypedData } from 'wagmi';
 import { Token } from '@/types/token'
 import toast from 'react-hot-toast'
-import Sdk from '@1inch/cross-chain-sdk'
+import * as Sdk from '@1inch/cross-chain-sdk'
 import {ethers} from 'ethers'
 import {CHAIN_CONFIGS, getLatestBlockTimestamp} from './config'
 const {Address} = Sdk
@@ -30,7 +31,7 @@ export const SwapInterface: React.FC = () => {
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
-
+  const { signTypedDataAsync } = useSignTypedData();
   // State
   const [tokens, setTokens] = useState<Token[]>([])
   const [fromToken, setFromToken] = useState<Token | undefined>()
@@ -218,6 +219,15 @@ export const SwapInterface: React.FC = () => {
         );
         
         console.log("Constructed Order:", order);
+        toast.loading('Please approve the transaction in your wallet...');
+        const typedData = order.getTypedData(fromChain);
+        const signature = await signTypedDataAsync({
+          domain: typedData.domain,
+          types: typedData.types, // Pass the full types object from the payload
+          primaryType: typedData.primaryType, // Let wagmi know the main type, e.g., "Order"
+          message: typedData.message, // The actual order data to be signed
+        });
+
       // Execute swap
       const result = await apiService.executeSwap({
         quote,
