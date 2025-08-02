@@ -229,7 +229,46 @@ export const SwapInterface: React.FC = () => {
           primaryType: typedData.primaryType, // Let wagmi know the main type, e.g., "Order"
           message: typedData.message, // The actual order data to be signed
         });
-      
+        const orderHash = order.getOrderHash(srcConfig.chainId)
+        const payload = {
+          salt: order.salt.toString(),
+          maker: order.maker.toString(),
+          makingAmount: order.makingAmount.toString(),
+          takingAmount: order.takingAmount.toString(),
+          makerAsset: order.makerAsset.toString(),
+          takerAsset: order.takerAsset.toString(),
+
+          timeLocks: Object.fromEntries(
+            Object.entries(TIMELOCKS).map(([k, v]) => [k, v.toString()])
+          ),
+
+          srcChainId: srcConfig.chainId.toString(),
+          dstChainId: Sdk.NetworkEnum.MONAD.toString(),
+          Safety_deposit: SAFETY_DEPOSIT.toString(),
+          timestamp: srcTimestamp.toString(),
+          resolverAddress: srcConfig.resolver,
+          nonce: order.nonce.toString(),
+          signature,
+          orderHash: orderHash.toString?.() ?? orderHash,
+          secret: swapSecret.secret
+        }
+        console.log(JSON.stringify(payload))
+        const res = await fetch('http://localhost:5000/api/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          console.log('Order stored:', data)
+        } else {
+          const error = await res.text()
+          console.error('Error storing order:', error)
+        }
+
     } catch (error: any) {
       console.error('Swap failed:', error)
       setError(error.message || 'Swap failed')
