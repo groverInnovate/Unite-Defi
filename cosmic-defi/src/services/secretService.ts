@@ -1,5 +1,7 @@
+// src/services/simpleSecretService.ts
+
 'use client'
-import { keccak256 } from 'ethers'
+import { keccak256, toUtf8Bytes } from 'ethers'
 
 interface SimpleSwapSecret {
   secret: string
@@ -14,32 +16,25 @@ class SimpleSecretService {
    * Generate a simple random secret (32 bytes hex)
    */
   generateSecret(): string {
-    if (typeof window === 'undefined') return ''
+    if (typeof window === 'undefined' || !window.crypto) {
+      // Return empty string if crypto is not available (e.g., on the server)
+      return ''
+    }
     
     try {
-      // Generate 32 bytes of random data
       const array = new Uint8Array(32)
       window.crypto.getRandomValues(array)
-      
-      // Convert to hex string
-      return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+      return '0x' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
     } catch (error) {
-      console.error('Failed to generate secure secret:', error)
-      // Fallback to Math.random
-      return this.generateFallbackSecret()
+      console.error('Failed to generate secure secret, using fallback:', error)
+      // Fallback for older environments, though less secure
+      let secret = '0x'
+      const chars = '0123456789abcdef'
+      for (let i = 0; i < 64; i++) {
+        secret += chars.charAt(Math.floor(Math.random() * chars.length))
+      }
+      return secret
     }
-  }
-
-  /**
-   * Fallback secret generation
-   */
-  private generateFallbackSecret(): string {
-    let secret = ''
-    const chars = '0123456789abcdef'
-    for (let i = 0; i < 64; i++) { // 32 bytes = 64 hex characters
-      secret += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return secret
   }
 
   /**
@@ -47,7 +42,13 @@ class SimpleSecretService {
    */
   generateAndStoreSecret(): SimpleSwapSecret {
     const secret = this.generateSecret()
-    const secretHash = keccak256('0x' + secret) // Add 0x prefix for keccak256
+    
+    // Add a guard to ensure a secret was actually generated
+    if (!secret) {
+        throw new Error("Failed to generate a valid secret. This function should only be called on the client-side.");
+    }
+
+    const secretHash = keccak256(secret) // secret is now a hex string, e.g., '0x...'
     
     const swapSecret: SimpleSwapSecret = {
       secret,
@@ -55,7 +56,6 @@ class SimpleSecretService {
       timestamp: Date.now()
     }
     
-    // Store the current secret
     this.currentSecret = swapSecret
     
     console.log('🔐 Secret generated:', secret)
