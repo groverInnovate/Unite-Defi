@@ -20,3 +20,12 @@ export const getOrderByHash = async (req, res) => {
     res.status(500).json({ error: 'Error fetching order', details: err })
   }
 }
+
+export const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+    res.json(orders)
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch orders', details: err })
+  }
+}

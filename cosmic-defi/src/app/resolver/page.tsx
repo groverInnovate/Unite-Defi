@@ -23,9 +23,10 @@ import {
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ResolverOrder, OrderStatus } from '@/types/resolverTypes'
-import { mockOrderService } from '@/services/mockOrderService'
+import * as Sdk from "@1inch/cross-chain-sdk"
+import { orderService } from '@/services/OrderService'
 import toast from 'react-hot-toast'
-
+const {Address} = Sdk
 // Chain configurations
 const SUPPORTED_CHAINS = {
   1: { name: 'Ethereum', color: 'text-blue-400', bg: 'bg-blue-500/20', explorer: 'https://etherscan.io' },
@@ -33,6 +34,55 @@ const SUPPORTED_CHAINS = {
   41454: { name: 'Monad', color: 'text-purple-400', bg: 'bg-purple-500/20', explorer: 'https://testnet-explorer.monad.xyz' },
 }
 
+// ------------------------------------------------------------------
+// Helper: rebuild SDK order from Mongo payload
+// ------------------------------------------------------------------
+function toSdkOrder(dbOrder: ResolverOrder): Sdk.CrossChainOrder {
+  const timeLocks = Sdk.TimeLocks.new({
+    srcWithdrawal: BigInt(dbOrder.timeLocks.srcWithdrawal),
+    srcPublicWithdrawal: BigInt(dbOrder.timeLocks.srcPublicWithdrawal),
+    srcCancellation: BigInt(dbOrder.timeLocks.srcCancellation),
+    srcPublicCancellation: BigInt(dbOrder.timeLocks.srcPublicCancellation),
+    dstWithdrawal: BigInt(dbOrder.timeLocks.dstWithdrawal),
+    dstPublicWithdrawal: BigInt(dbOrder.timeLocks.dstPublicWithdrawal),
+    dstCancellation: BigInt(dbOrder.timeLocks.dstCancellation),
+  })
+
+  return Sdk.CrossChainOrder.new(
+    new Address('0x...'), // TODO: real src escrow-factory
+    {
+      salt: BigInt(dbOrder.salt),
+      maker: new Address(dbOrder.maker),
+      makingAmount: BigInt(dbOrder.makingAmount),
+      takingAmount: BigInt(dbOrder.takingAmount),
+      makerAsset: new Address(dbOrder.makerAsset),
+      takerAsset: new Address(dbOrder.takerAsset),
+    },
+    {
+      hashLock: Sdk.HashLock.forSingleFill(dbOrder.secret),
+      timeLocks,
+      srcChainId: Sdk.NetworkEnum.ETHEREUM,
+      dstChainId: Sdk.NetworkEnum.MONAD,
+      srcSafetyDeposit: BigInt(dbOrder.Safety_deposit),
+      dstSafetyDeposit: BigInt(dbOrder.Safety_deposit),
+    },
+    {
+      auction: new Sdk.AuctionDetails({
+        initialRateBump: 0,
+        points: [],
+        duration: 120n,
+        startTime: BigInt(dbOrder.timestamp),
+      }),
+      whitelist: [{ address: new Address(dbOrder.resolverAddress), allowFrom: 0n }],
+      resolvingStartTime: 0n,
+    },
+    {
+      nonce: BigInt(dbOrder.nonce),
+      allowPartialFills: false,
+      allowMultipleFills: false,
+    }
+  )
+}
 export default function ResolverPage() {
   const [orders, setOrders] = useState<ResolverOrder[]>([])
   const [filteredOrders, setFilteredOrders] = useState<ResolverOrder[]>([])
@@ -69,19 +119,19 @@ export default function ResolverPage() {
     setFilteredOrders(filtered)
   }, [orders, searchTerm, statusFilter])
 
-  const loadOrders = async () => {
+   const loadOrders = async () => {
     try {
       setIsLoading(true)
-      // TODO: Replace with actual API call when MongoDB is integrated
-      const allOrders = await mockOrderService.getAllOrders()
-      setOrders(allOrders)
-    } catch (error) {
-      console.error('Error loading orders:', error)
-      toast.error('Failed to load orders')
+      const rawOrders = await orderService.getAllOrders()
+      const enriched = rawOrders.map(o => ({ ...o, sdkOrder: toSdkOrder(o) }))
+      setOrders(enriched)
+    } catch (e) {
+      console.error(e)
     } finally {
       setIsLoading(false)
     }
   }
+
 
   const deploySrcContract = async (order: ResolverOrder) => {
     if (!order.orderHash) return
@@ -100,11 +150,11 @@ export default function ResolverPage() {
       // Generate mock contract address
       const contractAddress = `0x${Math.random().toString(16).substring(2, 42)}`
       
-      // TODO: Replace with actual contract deployment when backend is ready
-      await mockOrderService.updateOrder(order.orderHash, {
-        srcContractDeployed: true,
-        srcContractAddress: contractAddress
-      })
+      // // TODO: Replace with actual contract deployment when backend is ready
+      // await mockOrderService.updateOrder(order.orderHash, {
+      //   srcContractDeployed: true,
+      //   srcContractAddress: contractAddress
+      // })
       
       // Update local state
       setOrders(prev => prev.map(o => 
@@ -144,10 +194,10 @@ export default function ResolverPage() {
       const contractAddress = `0x${Math.random().toString(16).substring(2, 42)}`
       
       // TODO: Replace with actual contract deployment when backend is ready
-      await mockOrderService.updateOrder(order.orderHash, {
-        destContractDeployed: true,
-        destContractAddress: contractAddress
-      })
+      // await mockOrderService.updateOrder(order.orderHash, {
+      //   destContractDeployed: true,
+      //   destContractAddress: contractAddress
+      // })
       
       // Update local state
       setOrders(prev => prev.map(o => 
@@ -211,10 +261,10 @@ export default function ResolverPage() {
       // Simulate withdrawal
       await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // TODO: Replace with actual withdrawal and status update when backend is ready
-      await mockOrderService.updateOrder(order.orderHash, {
-        status: OrderStatus.FILLED
-      })
+      // // TODO: Replace with actual withdrawal and status update when backend is ready
+      // await mockOrderService.updateOrder(order.orderHash, {
+      //   status: OrderStatus.FILLED
+      // })
       
       // Update local state
       setOrders(prev => prev.map(o => 
@@ -449,9 +499,9 @@ export default function ResolverPage() {
                       {/* Swap Details */}
                       <div className="flex items-center space-x-4 p-4 bg-meteor-gray/20 rounded-lg group-hover:bg-meteor-gray/30 transition-colors">
                         <div className="text-center">
-                          <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-2 ${SUPPORTED_CHAINS[order.sourceChainId as keyof typeof SUPPORTED_CHAINS]?.bg || 'bg-stardust-gray/20'}`}>
-                            <span className={SUPPORTED_CHAINS[order.sourceChainId as keyof typeof SUPPORTED_CHAINS]?.color || 'text-stardust-gray'}>
-                              {SUPPORTED_CHAINS[order.sourceChainId as keyof typeof SUPPORTED_CHAINS]?.name || `Chain ${order.sourceChainId}`}
+                          <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-2 ${SUPPORTED_CHAINS[order.srcChainId as keyof typeof SUPPORTED_CHAINS]?.bg || 'bg-stardust-gray/20'}`}>
+                            <span className={SUPPORTED_CHAINS[order.srcChainId as keyof typeof SUPPORTED_CHAINS]?.color || 'text-stardust-gray'}>
+                              {SUPPORTED_CHAINS[order.srcChainId as keyof typeof SUPPORTED_CHAINS]?.name || `Chain ${order.srcChainId}`}
                             </span>
                           </div>
                           <div className="text-sm text-cosmic-white font-medium">
@@ -467,9 +517,9 @@ export default function ResolverPage() {
                         </div>
 
                         <div className="text-center">
-                          <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-2 ${SUPPORTED_CHAINS[order.destinationChainId as keyof typeof SUPPORTED_CHAINS]?.bg || 'bg-stardust-gray/20'}`}>
-                            <span className={SUPPORTED_CHAINS[order.destinationChainId as keyof typeof SUPPORTED_CHAINS]?.color || 'text-stardust-gray'}>
-                              {SUPPORTED_CHAINS[order.destinationChainId as keyof typeof SUPPORTED_CHAINS]?.name || `Chain ${order.destinationChainId}`}
+                          <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-2 ${SUPPORTED_CHAINS[order.dstChainId as keyof typeof SUPPORTED_CHAINS]?.bg || 'bg-stardust-gray/20'}`}>
+                            <span className={SUPPORTED_CHAINS[order.dstChainId as keyof typeof SUPPORTED_CHAINS]?.color || 'text-stardust-gray'}>
+                              {SUPPORTED_CHAINS[order.dstChainId as keyof typeof SUPPORTED_CHAINS]?.name || `Chain ${order.dstChainId}`}
                             </span>
                           </div>
                           <div className="text-sm text-cosmic-white font-medium">

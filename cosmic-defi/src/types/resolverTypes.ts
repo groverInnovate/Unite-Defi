@@ -1,45 +1,45 @@
 export interface ResolverOrder {
-  orderHash: string
+  /* ----------  Core order fields (Mongo) ---------- */
+  salt: string
   maker: string
-  makerAsset: string
   makingAmount: string
-  takerAsset: string
   takingAmount: string
-  receiver: string
-  status: OrderStatus
-  hashLock: string
-  sourceChainId: number
-  destinationChainId: number
-  createdAt: Date
-  expiry: Date
-  quoteId?: string
-  
-  // Display-friendly fields
+  makerAsset: string
+  takerAsset: string
+
+  timeLocks: TimeLocks
+  timestamp: string
+  srcChainId: number
+  dstChainId: number
+  Safety_deposit: string   // BigInt as string
+  resolverAddress: string  // whitelist resolver
+  nonce: string            // BigInt as string
+  signature: string
+  orderHash: string
+  secret: string           // preimage for HashLock
+
+  /* ----------  UI helpers (still needed) ---------- */
   fromTokenSymbol: string
   toTokenSymbol: string
   userAddress: string
-  
-  // Resolver-specific fields
-  srcContractDeployed?: boolean
-  destContractDeployed?: boolean
-  srcContractAddress?: string
-  destContractAddress?: string
-  resolverAddress?: string
-  resolverFee?: string
-  
-  // Fields for future MongoDB integration (commented)
-  // signature?: string
-  // salt?: string
-  // auctionParameters?: any
-  // secretHashes?: string[]
-  // updatedAt?: Date
+  status: string
 }
 
 export enum OrderStatus {
-  PENDING = 'pending',
-  AWAITING_ESCROW = 'awaiting_escrow',
-  ESCROWED = 'escrowed',
-  FILLED = 'filled',
-  EXPIRED = 'expired',
-  CANCELLED = 'cancelled'
+  PENDING = 'PENDING',
+  AWAITING_ESCROW = 'AWAITING_ESCROW',
+  ESCROWED = 'ESCROWED',
+  FILLED = 'FILLED',
+  EXPIRED = 'EXPIRED',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface TimeLocks {
+  srcWithdrawal: string
+  srcPublicWithdrawal: string
+  srcCancellation: string
+  srcPublicCancellation: string
+  dstWithdrawal: string
+  dstPublicWithdrawal: string
+  dstCancellation: string
 }

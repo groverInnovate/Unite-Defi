@@ -20,7 +20,7 @@ const CrossChainPayloadSchema = new mongoose.Schema({
 
   srcChainId: { type: Number, required: true },
   dstChainId: { type: Number, required: true },
-
+  status: { type: String, enum: ['PENDING', 'ESCROWED', 'FILLED', 'CANCELLED'], default: 'PENDING' },
   Safety_deposit: { type: String, required: true }, // Assumes stringified BigInt or Address
 
   timestamp: { type: Number, required: true },
