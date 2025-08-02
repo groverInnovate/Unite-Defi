@@ -14,13 +14,17 @@ import { useTokenBalances } from '@/hooks/useTokenBalances'
 import { SwapQuoteResponse } from '@/types/api'
 import { Token } from '@/types/token'
 import toast from 'react-hot-toast'
-
+import Sdk from '@1inch/cross-chain-sdk'
+import {ethers} from 'ethers'
+import {CHAIN_CONFIGS, getLatestBlockTimestamp} from './config'
+const {Address} = Sdk
 // Supported chains for cross-chain swaps
 const SUPPORTED_CHAINS = {
   1: { name: 'Ethereum', color: 'text-blue-400', explorer: 'https://etherscan.io' },
   11155111: { name: 'Sepolia', color: 'text-blue-300', explorer: 'https://sepolia.etherscan.io' },
   41454: { name: 'Monad', color: 'text-purple-400', explorer: 'https://testnet-explorer.monad.xyz' },
 }
+
 
 export const SwapInterface: React.FC = () => {
   const { address, isConnected } = useAccount()
@@ -136,11 +140,11 @@ export const SwapInterface: React.FC = () => {
       // ✅ SIMPLIFIED: Generate secret and hash for cross-chain swaps
       let swapSecret: SimpleSwapSecret | null = null
       
-      if (isCrossChain && fromChain !== toChain) {
+      
         swapSecret = simpleSecretService.generateAndStoreSecret()
         setCurrentSecret(swapSecret)
         toast.success('🔐 Secret generated and hash stored!')
-      }
+      
       
       if (chainId !== fromChain) {
         toast.loading(
@@ -157,9 +161,63 @@ export const SwapInterface: React.FC = () => {
           return
         }
       }
-      
+      const TIMELOCKS = {
+        srcWithdrawal: 10n,
+        srcPublicWithdrawal: 120n,
+        srcCancellation: 121n,
+        srcPublicCancellation: 122n,
+        dstWithdrawal: 10n,
+        dstPublicWithdrawal: 100n,
+        dstCancellation: 101n,
+      };
+      const SAFETY_DEPOSIT = ethers.parseEther('0.001'); // 0.001 ETH
+      const UINT_40_MAX = 2n ** 40n - 1n;
+      const srcConfig = CHAIN_CONFIGS[fromChain];
+      const dstConfig = CHAIN_CONFIGS[toChain];
+        
+      const makingAmount = ethers.parseUnits(fromAmount, fromToken.decimals);
+      const takingAmount = ethers.parseUnits(quote.dstAmount, toToken.decimals);
+      const srcTimestamp = await getLatestBlockTimestamp(srcConfig.url);
       toast.loading('🚀 Executing swap transaction...')
-      
+      const order = Sdk.CrossChainOrder.new(
+            new Address(srcConfig.escrowFactory),
+            {
+                salt: Sdk.randBigInt(1000n), // Or a more robust random generator
+                maker: new Address(address),
+                makingAmount: makingAmount,
+                takingAmount: takingAmount,
+                makerAsset: new Address(fromToken.address),
+                takerAsset: new Address(toToken.address),
+            },
+            {
+                hashLock: Sdk.HashLock.forSingleFill(swapSecret.secret),
+                timeLocks: Sdk.TimeLocks.new(TIMELOCKS),
+                srcChainId: srcConfig.chainId,
+                dstChainId: dstConfig.chainId,
+                srcSafetyDeposit: SAFETY_DEPOSIT,
+                dstSafetyDeposit: SAFETY_DEPOSIT,
+            },
+            {
+                auction: new Sdk.AuctionDetails({
+                    initialRateBump: 0,
+                    points: [],
+                    duration: 120n, // 2 minutes
+                    startTime: srcTimestamp
+                }),
+                whitelist: [{
+                    address: new Address(srcConfig.resolver),
+                    allowFrom: 0n
+                }],
+                resolvingStartTime: 0n,
+            },
+            {
+                nonce: Sdk.randBigInt(UINT_40_MAX),
+                allowPartialFills: false,
+                allowMultipleFills: false,
+            }
+        );
+        
+        console.log("Constructed Order:", order);
       // Execute swap
       const result = await apiService.executeSwap({
         quote,
