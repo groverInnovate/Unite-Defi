@@ -43,5 +43,8 @@ export const CHAIN_TO_WRAPPER = {
     ),
     [NetworkEnum.MONAD]: new Address(
         '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701'
+    ),
+    [NetworkEnum.SEPOLIA]: new Address(
+        '0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14'
     )
 }

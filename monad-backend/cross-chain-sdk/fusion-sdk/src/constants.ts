@@ -14,7 +14,8 @@ export enum NetworkEnum {
     LINEA = 59144,
     SONIC = 146,
     UNICHAIN = 130,
-    MONAD = 10143
+    MONAD = 10143,
+    SEPOLIA = 11155111
 }
 
 export const ONE_INCH_LIMIT_ORDER_V4 =
