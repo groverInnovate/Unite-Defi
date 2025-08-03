@@ -20,6 +20,7 @@ import {bytecode} from '../../constants/ResolverBytecode.js'
 
 const { Address } = Sdk
 
+// FIXED: Added nativeCurrency details for both chains to comply with EIP-3085.
 const CHAIN_CONFIG = {
   sepolia: {
     chainId: 11155111,
@@ -29,17 +30,27 @@ const CHAIN_CONFIG = {
     explorer: 'https://sepolia.etherscan.io',
     rpcUrl: 'https://rpc.sepolia.org',
     lop: '0x9B77eE6D1A29DfE03d7AFDD6a0472266e2D0b193',
-    factory: '0x6a9D2E325827B7958DA84DDC7e3473A8fc5164B7'
+    factory: '0x6a9D2E325827B7958DA84DDC7e3473A8fc5164B7',
+    nativeCurrency: {
+      name: 'Sepolia Ether',
+      symbol: 'ETH',
+      decimals: 18,
+    }
   },
   monad: {
-    chainId: 41454,
+    chainId: 10143,
     name: 'Monad',
     color: 'text-purple-400',
     bg: 'bg-purple-400/20',
     explorer: 'https://testnet-explorer.monad.xyz',
     rpcUrl: 'https://testnet-rpc.monad.xyz',
     lop: '0xd946F0bc4292a5b83894df44fc931e7852d728ff',
-    factory: '0xBdcBec40daC2643b0193D1bc0B0Acbd580B0A446'
+    factory: '0xBdcBec40daC2643b0193D1bc0B0Acbd580B0A446',
+    nativeCurrency: {
+      name: 'Monad Testnet Ether',
+      symbol: 'MON',
+      decimals: 18,
+    }
   }
 }
 
@@ -87,7 +98,7 @@ function toSdkOrder(dbOrder: ResolverOrder): Sdk.CrossChainOrder {
     {
       hashLock,
       timeLocks,
-      srcChainId: Sdk.NetworkEnum.ETHEREUM,
+      srcChainId: Sdk.NetworkEnum.SEPOLIA,
       dstChainId: Sdk.NetworkEnum.MONAD,
       srcSafetyDeposit: BigInt(dbOrder.Safety_deposit),
       dstSafetyDeposit: BigInt(dbOrder.Safety_deposit),
@@ -219,12 +230,14 @@ function ResolverPage() {
     } catch (switchError: any) {
       if (switchError.code === 4902) {
         try {
+          // FIXED: The call to 'wallet_addEthereumChain' now includes the 'nativeCurrency' field.
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
               chainId: `0x${config.chainId.toString(16)}`,
               chainName: config.name,
               rpcUrls: [config.rpcUrl],
+              nativeCurrency: config.nativeCurrency,
               blockExplorerUrls: [config.explorer]
             }]
           })
@@ -377,7 +390,6 @@ function ResolverPage() {
         case 'deployDst': {
           const srcImmutables = sdkOrder.toSrcImmutables(srcChainId, new Address(resolverContract.srcAddress), BigInt(order.makingAmount), sdkOrder.escrowExtension.hashLockInfo)
           
-          // FIXED: Use the static .new() factory method instead of the private constructor.
           const dstImmutables = srcImmutables
             .withComplement(Sdk.DstImmutablesComplement.new({
                 maker: new Address(order.maker),
@@ -424,7 +436,6 @@ function ResolverPage() {
           
           const srcImmutables = sdkOrder.toSrcImmutables(srcChainId, new Address(resolverContract.srcAddress), BigInt(order.makingAmount), sdkOrder.escrowExtension.hashLockInfo)
 
-          // FIXED: Use the static .new() factory method here as well.
           const dstImmutables = srcImmutables
             .withComplement(Sdk.DstImmutablesComplement.new({
                 maker: new Address(order.maker),

@@ -15,6 +15,7 @@ import { SwapQuoteResponse } from '@/types/api'
 import { useSignTypedData } from 'wagmi';
 import { Token } from '@/types/token'
 import toast from 'react-hot-toast'
+import crypto from 'crypto'
 import * as Sdk from '@1inch/cross-chain-sdk'
 import {ethers, getAddress} from 'ethers'
 import {CHAIN_CONFIGS, getLatestBlockTimestamp} from './config'
@@ -23,7 +24,7 @@ const {Address} = Sdk
 const SUPPORTED_CHAINS = {
   1: { name: 'Ethereum', color: 'text-blue-400', explorer: 'https://etherscan.io' },
   11155111: { name: 'Sepolia', color: 'text-blue-300', explorer: 'https://sepolia.etherscan.io' },
-  41454: { name: 'Monad', color: 'text-purple-400', explorer: 'https://testnet-explorer.monad.xyz' },
+  10143: { name: 'Monad', color: 'text-purple-400', explorer: 'https://testnet-explorer.monad.xyz' },
 }
 
 
